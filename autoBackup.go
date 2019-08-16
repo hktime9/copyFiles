@@ -59,11 +59,9 @@ func checkErr(err error) {
     }
 }
 
-func Copy(src string, dst string) {
-    // Read all content of src to data
+func copyFile(src string, dst string) {
     data, err := ioutil.ReadFile(src)
     checkErr(err)
-    // Write data to dst
     err = ioutil.WriteFile(dst, data, 0644)
     checkErr(err)
 }
@@ -101,7 +99,7 @@ func worker(files []os.FileInfo, srcDir string, dstDir string){
 			}
 			isPresent:= findInArray(file,dstFiles)
 			if(!isPresent){
-				Copy(srcDir+"/"+file.Name(),dstDir+"/"+file.Name())
+				copyFile(srcDir+"/"+file.Name(),dstDir+"/"+file.Name())
 				fmt.Println(file.Name()+" Copied")
 			}
 		}
