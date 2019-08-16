@@ -4,7 +4,7 @@ import(
 	"fmt"
 	"os"
 	"log"
-	"strings"
+	"io/ioutil"
 )
 
 func giveFilesInDir(dir string)([]os.FileInfo, error){
@@ -36,17 +36,6 @@ func makeFullPath(src string, files []os.FileInfo)([]string){
 	return returnArray
 }
 
-func filesToCopy(srcFiles []os.FileInfo, dstFiles []os.FileInfo)([]os.FileInfo){
-	returnArray:= make([]os.FileInfo,0)
-	for _,file:= range srcFiles{
-		isPresent:= findInArray(file,dstFiles)
-		if(!isPresent){
-			returnArray= append(returnArray,file)			
-		}
-	}
-	return returnArray
-}
-
 func findInArray(file os.FileInfo, dstFiles []os.FileInfo)(bool){
 	for _, element:= range dstFiles{
 		if((element.Name()==file.Name())&&(element.ModTime()==file.ModTime())){
@@ -64,12 +53,38 @@ func findInArray(file os.FileInfo, dstFiles []os.FileInfo)(bool){
 // 	}
 // }
 
+func checkErr(err error) {
+    if err != nil {
+        log.Fatal(err)
+    }
+}
+
+func Copy(src string, dst string) {
+    // Read all content of src to data
+    data, err := ioutil.ReadFile(src)
+    checkErr(err)
+    // Write data to dst
+    err = ioutil.WriteFile(dst, data, 0644)
+    checkErr(err)
+}
+
+func filesToCopy(srcFiles []os.FileInfo, dstFiles []os.FileInfo)([]os.FileInfo){
+	returnArray:= make([]os.FileInfo,0)
+	for _,file:= range srcFiles{
+		isPresent:= findInArray(file,dstFiles)
+		if(!isPresent){
+			returnArray= append(returnArray,file)			
+		}
+	}
+	return returnArray
+}
+
 func worker(files []os.FileInfo, srcDir string, dstDir string){
 	for _,file:= range files{
 		if(file.IsDir()){
 			newSrc:= srcDir+"/"+file.Name()
 			newDst:= dstDir+"/"+file.Name()
-			newContents,err:= giveFilesInDir(newSrc)
+			newContents, err:= giveFilesInDir(newSrc)
 			if(err!=nil){
 				panic("Directory Reading Error")
 				return
@@ -79,9 +94,16 @@ func worker(files []os.FileInfo, srcDir string, dstDir string){
 			}
 			worker(newContents,newSrc,newDst)
 		}else{
-			// if _, err := os.Stat("/path/to/whatever"); os.IsNotExist(err) {
-  	// 			// path/to/whatever does not exist
-			// }
+			dstFiles, err:= giveFilesInDir(dstDir)
+			if(err!=nil){
+				panic("Directory Reading Error")
+				return
+			}
+			isPresent:= findInArray(file,dstFiles)
+			if(!isPresent){
+				Copy(srcDir+"/"+file.Name(),dstDir+"/"+file.Name())
+				fmt.Println(file.Name()+" Copied")
+			}
 		}
 	}
 }
@@ -98,9 +120,7 @@ func main()(){
     }
     files:= filesToCopy(srcFiles,dstFiles)
 
-    newStr:= "C:/Users/usama/Code/Go/AutoBackup/src/yen1"
-    teststr:= strings.Replace(newStr,srcDir,"",1)
-    fmt.Println(teststr)
+    // newStr:= "C:/Users/usama/Code/Go/AutoBackup/src/9701_s07_qp_5.pdf"
     worker(files,srcDir,dstDir)
     // absolutePaths:= makeFullPath(srcDir,files)
 }
