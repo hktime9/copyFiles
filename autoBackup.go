@@ -45,14 +45,6 @@ func findInArray(file os.FileInfo, dstFiles []os.FileInfo)(bool){
 	return false
 }
 
-// func handler(paths []string)(int){
-// 	if(len(paths)<100){
-		
-// 	}else{
-		
-// 	}
-// }
-
 func checkErr(err error) {
     if err != nil {
         log.Fatal(err)
@@ -106,19 +98,43 @@ func worker(files []os.FileInfo, srcDir string, dstDir string){
 	}
 }
 
+func handler(allFiles []os.FileInfo, src string, dst string)(bool){
+	chanArray:= make([]chan bool,0,len(allFiles))
+	if(len(allFiles)<100){
+		for i,file:= range allFiles{
+			fileArray:= make([]os.FileInfo,1,1)
+			fileArray[0]= file
+			go func(){
+				index:= i
+				worker(fileArray,src,dst)
+				randChan:= make(chan bool)
+				randChan<-true
+				chanArray[index]= randChan
+			}()
+		}
+		for(len(allFiles)>=len(chanArray)){
+			fmt.Println(len(allFiles),":",len(chanArray))
+		}
+	}else{
+
+	}
+	return true
+}
+
 func main()(){
 	fmt.Println("Hello")
     srcDir:= "C:/Users/usama/Code/Go/AutoBackup/src"
     srcFiles, srcErr:= giveFilesInDir(srcDir)
     dstDir:= "C:/Users/usama/Code/Go/AutoBackup/dst"
-    dstFiles, dstErr:= giveFilesInDir(dstDir)
-    if(srcErr!=nil||dstErr!=nil){
+    // dstFiles, dstErr:= giveFilesInDir(dstDir)
+    if(srcErr!=nil){
     	panic("Directory Reading Error")
     	return
     }
-    files:= filesToCopy(srcFiles,dstFiles)
+    // files:= filesToCopy(srcFiles,dstFiles)
 
     // newStr:= "C:/Users/usama/Code/Go/AutoBackup/src/9701_s07_qp_5.pdf"
-    worker(files,srcDir,dstDir)
+    // worker()
+    handler(srcFiles,srcDir,dstDir)
     // absolutePaths:= makeFullPath(srcDir,files)
 }
