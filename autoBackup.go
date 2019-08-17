@@ -5,6 +5,7 @@ import(
 	"os"
 	"log"
 	"io/ioutil"
+	"sync"
 )
 
 func giveFilesInDir(dir string)([]os.FileInfo, error){
@@ -99,21 +100,29 @@ func worker(files []os.FileInfo, srcDir string, dstDir string){
 }
 
 func handler(allFiles []os.FileInfo, src string, dst string)(bool){
-	chanArray:= make([]chan bool,0,len(allFiles))
+	chanArray:= make([]chan bool,0)
+	var mutex = &sync.Mutex{}
 	if(len(allFiles)<100){
 		for i,file:= range allFiles{
+			fmt.Println(i)
 			fileArray:= make([]os.FileInfo,1,1)
 			fileArray[0]= file
-			go func(){
+			go func(array []chan bool){
 				index:= i
 				worker(fileArray,src,dst)
-				randChan:= make(chan bool)
-				randChan<-true
-				chanArray[index]= randChan
-			}()
+				mutex.Lock()
+				channel:= make(chan bool)
+				channel<-true
+				array= append(array,channel)
+				mutex.Unlock()
+				fmt.Println("done. new size: ", len(array))
+				fmt.Println("pushed at: ", index, "len: ", len(chanArray))
+			}(chanArray)
 		}
-		for(len(allFiles)>=len(chanArray)){
-			fmt.Println(len(allFiles),":",len(chanArray))
+		for(true){
+			if(len(allFiles)<=len(chanArray)){
+				break
+			}
 		}
 	}else{
 
@@ -131,10 +140,6 @@ func main()(){
     	panic("Directory Reading Error")
     	return
     }
-    // files:= filesToCopy(srcFiles,dstFiles)
 
-    // newStr:= "C:/Users/usama/Code/Go/AutoBackup/src/9701_s07_qp_5.pdf"
-    // worker()
     handler(srcFiles,srcDir,dstDir)
-    // absolutePaths:= makeFullPath(srcDir,files)
 }
