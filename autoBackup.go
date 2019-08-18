@@ -6,6 +6,7 @@ import(
 	"log"
 	"io/ioutil"
 	"sync"
+	"strings"
 )
 
 func giveFilesInDir(dir string)([]os.FileInfo, error){
@@ -72,6 +73,10 @@ func filesToCopy(srcFiles []os.FileInfo, dstFiles []os.FileInfo)([]os.FileInfo){
 
 func worker(files []os.FileInfo, srcDir string, dstDir string){
 	for _,file:= range files{
+		splittedName:= strings.Split(file.Name(),".")
+		if(splittedName[len(splittedName)-1]=="ini"){
+			continue
+		}
 		if(file.IsDir()){
 			newSrc:= srcDir+"/"+file.Name()
 			newDst:= dstDir+"/"+file.Name()
@@ -97,6 +102,16 @@ func worker(files []os.FileInfo, srcDir string, dstDir string){
 			}
 		}
 	}
+}
+
+func makeDstFolder(srcDir string, dstDir string)(string){
+	srcContents:= strings.Split(srcDir,"/")
+	srcFolder:= srcContents[len(srcContents)-1]
+	newDst:= dstDir+"/"+srcFolder
+	if _,err:= os.Stat(newDst); os.IsNotExist(err){
+		os.Mkdir(newDst,0700)
+	}
+	return newDst
 }
 
 func handler(allFiles []os.FileInfo, src string, dst string)(bool){
@@ -132,14 +147,13 @@ func handler(allFiles []os.FileInfo, src string, dst string)(bool){
 
 func main()(){
 	fmt.Println("Hello")
-    srcDir:= "C:/Users/usama/Code/Go/AutoBackup/src"
+    srcDir:= "C:/Users/usama/Documents/Resume & Applications"
     srcFiles, srcErr:= giveFilesInDir(srcDir)
-    dstDir:= "C:/Users/usama/Code/Go/AutoBackup/dst"
-    // dstFiles, dstErr:= giveFilesInDir(dstDir)
+    dstDir:= "C:/Users/usama/OneDrive"
     if(srcErr!=nil){
     	panic("Directory Reading Error")
     	return
     }
-
-    handler(srcFiles,srcDir,dstDir)
+    folderDst:= makeDstFolder(srcDir,dstDir)
+    worker(srcFiles,srcDir,folderDst)
 }
